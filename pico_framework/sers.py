@@ -23,9 +23,6 @@ class CurrentMarketPriceSerializer(serializers.ModelSerializer):
         return obj.get_unit_id_display()
 
     def get_change(self, obj):
-        if not obj.change:
-            return 0
-
         return "{:.2f}".format(obj.change)
 
     def get_price(self, obj):
