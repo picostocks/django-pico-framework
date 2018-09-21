@@ -11,6 +11,7 @@ def get_stats_price(pairs: list):
     for pair in pairs:
         qeuryset = models.CurrentMarketPrice.objects.filter(
             unit_id=pair[1], stock_id=pair[0])
-        result.append(sers.CurrentMarketPriceSerializer(
-            qeuryset, many=True).data)
+        if qeuryset:
+            result.append(sers.CurrentMarketPriceSerializer(
+                qeuryset, many=True).data)
     return result
