@@ -1,11 +1,3 @@
-import os
-from pico_framework.settings import tasks_settings
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE",
-                      tasks_settings.DJANGO_SETTINGS_MODULE, )
-os.environ.setdefault("DJANGO_CONFIGURATION",
-                      tasks_settings.DJANGO_CONFIGURATION)
-
 import configurations
 configurations.setup()
 

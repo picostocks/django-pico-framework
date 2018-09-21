@@ -4,7 +4,7 @@ import importlib
 from celery.task import periodic_task
 
 from pico_framework.models import CurrentMarketPrice
-from pico_framework.settings import tasks_settings
+from pico_framework import settings
 
 
 class Sync(object):
@@ -14,7 +14,7 @@ class Sync(object):
     def process(self):
         new_stats = []
 
-        for stock_id, unit_id in tasks_settings.PAIRS:
+        for stock_id, unit_id in settings.get_settings('PAIRS'):
             price = self.get_market_price(stock_id, unit_id)
             if price is None:
                 return
@@ -55,7 +55,7 @@ class Sync(object):
         return (bids[0]['price'] + asks[0]['price'])/2
 
     def call_handlers(self, price_stats):
-        for path in tasks_settings.CALLBACK_TASK:
+        for path in settings.get_settings('CALLBACK_TASK'):
             s_path = path.split('.')
             callback = s_path[-1]
             module_path = '.'.join(s_path[:-1])
@@ -67,7 +67,7 @@ class Sync(object):
                 callback(price_stats)
 
 
-@periodic_task(run_every=tasks_settings.SYNC_TASK_EVERY)
+@periodic_task(run_every=settings.get_settings('SYNC_TASK_EVERY'))
 def sync_task():
     sync = Sync()
     return sync.process()
