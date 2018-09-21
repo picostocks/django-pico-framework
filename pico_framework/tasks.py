@@ -19,10 +19,12 @@ class Sync(object):
             if price is None:
                 return
 
+            last_price = None
             try:
                 last_stat = CurrentMarketPrice.objects.get(
                     stock_id=stock_id,
                     unit_id=unit_id)
+                last_price = float(last_stat.price)
             except CurrentMarketPrice.DoesNotExist:
                 last_stat = CurrentMarketPrice(
                     stock_id=stock_id,
@@ -30,8 +32,8 @@ class Sync(object):
                 )
 
             last_stat.change = 0
-            if last_stat.price:
-                last_stat.change = 100*(price - float(last_stat.price))/price
+            if last_price:
+                last_stat.change = 100*(price - last_price)/price
 
             last_stat.price = price
             last_stat.save()
