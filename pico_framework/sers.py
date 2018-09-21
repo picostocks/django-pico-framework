@@ -6,6 +6,8 @@ class CurrentMarketPriceSerializer(serializers.ModelSerializer):
     market = serializers.SerializerMethodField()
     stock_code = serializers.SerializerMethodField()
     unit_code = serializers.SerializerMethodField()
+    change = serializers.SerializerMethodField()
+    price = serializers.SerializerMethodField()
 
     class Meta:
         model = CurrentMarketPrice
@@ -19,3 +21,12 @@ class CurrentMarketPriceSerializer(serializers.ModelSerializer):
 
     def get_unit_code(self, obj):
         return obj.get_unit_id_display()
+
+    def get_change(self, obj):
+        if not obj.change:
+            return 0
+
+        return "{:.2f}".format(obj.change)
+
+    def get_price(self, obj):
+        return "{:.5f}".format(obj.price)

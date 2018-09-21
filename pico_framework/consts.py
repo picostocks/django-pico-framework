@@ -4,7 +4,7 @@ BST_ID = 4
 
 
 STOCK_CHOICES = (
-    (BST_ID, "BTC"),
+    (BTC_ID, "BTC"),
     (ETH_ID, "ETH"),
     (BST_ID, "BST")
 )
