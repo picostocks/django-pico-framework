@@ -6,7 +6,8 @@ with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
-requirements = ["requests==2.18.4", "celery==4.2.1"]
+requirements = ["requests==2.18.4", "celery==4.2.1",
+                "djangorestframework==3.8.2"]
 
 setup(
     author="picostocks",
