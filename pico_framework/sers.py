@@ -17,5 +17,5 @@ class CurrentMarketPriceSerializer(serializers.ModelSerializer):
     def get_stock_code(self, obj):
         return obj.get_stock_id_display()
 
-    def get_unit_code(self):
+    def get_unit_code(self, obj):
         return obj.get_unit_id_display()
