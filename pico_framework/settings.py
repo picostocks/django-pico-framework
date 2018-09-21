@@ -11,4 +11,4 @@ DEFAULTS = {
 
 def get_settings(name):
     framework_settings = getattr(settings, FRAMEWORK_SETTINGS_NAME, DEFAULTS)
-    return framework_settings.get(name)
+    return framework_settings.get(name, DEFAULTS.get(name))
