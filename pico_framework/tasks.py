@@ -31,7 +31,7 @@ class Sync(object):
 
             last_stat.change = 0
             if last_stat.price:
-                last_stat.change = 100*(price - last_stat.price)/price
+                last_stat.change = 100*(price - float(last_stat.price))/price
 
             last_stat.price = price
             last_stat.save()
