@@ -19,5 +19,5 @@ def get_stats_price(pairs=None):
             unit_id=pair[1], stock_id=pair[0])
         if qeuryset:
             result.append(sers.CurrentMarketPriceSerializer(
-                qeuryset, many=True).data)
+                qeuryset, many=False).data)
     return result
