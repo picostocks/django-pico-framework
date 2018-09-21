@@ -13,17 +13,17 @@ Quick start
     ]
 
 
-2. Run `python manage.py migrate` to create the polls models.
+2. Run `python manage.py migrate` to create table in DB.
 
 3. Set settings "PICO_FRAMEWORK" in main settings.
 
 Default settings:
 
-DEFAULTS = {
-    'PAIRS': [],    # list by tuples. Example ('ETH', 'BTC') => 'ETH\BTC'
-    'DJANGO_SETTINGS_MODULE': None, # required
-    'DJANGO_CONFIGURATION': None, # required
-    'SYNC_TASK_EVERY': 15,
-    'CALLBACK_TASKS': [] # list by paths with dote separate to the function
-}
+    DEFAULTS = {
+        'PAIRS': [],    # list by tuples. Example ('ETH', 'BTC') => 'ETH\BTC'
+        'DJANGO_SETTINGS_MODULE': None, # required
+        'DJANGO_CONFIGURATION': None, # required
+        'SYNC_TASK_EVERY': 15,
+        'CALLBACK_TASKS': [] # list by paths with dote separate to the function
+    }
 
