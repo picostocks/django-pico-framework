@@ -52,7 +52,7 @@ class Sync(object):
         if not bids or not asks:
             return None
 
-        return (bids[0]['price'] + asks[0]['price'])/2
+        return (float(bids[0]['price']) + float(asks[0]['price']))/2
 
     def call_handlers(self, price_stats):
         for path in settings.get_settings('CALLBACK_TASK'):
