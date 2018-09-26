@@ -4,8 +4,10 @@ FRAMEWORK_SETTINGS_NAME = "PICO_FRAMEWORK"
 
 DEFAULTS = {
     'PAIRS': [],
-    'SYNC_TASK_EVERY': 15,
-    'CALLBACK_TASK': []
+    'SYNC_PRICE_EVERY': 15,
+    'SYNC_GRANULARITY_EVERY': 60,
+    'GRANULARITY': ['1h', '24h', '7d', '14d', 'month', 'year'],
+    'CALLBACK_TASK': [],
 }
 
 

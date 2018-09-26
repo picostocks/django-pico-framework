@@ -3,10 +3,15 @@ from pico_framework.settings import DEFAULTS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
-    },
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'pico_test',
+        'USER': 'pico_test',
+        'PASSWORD': 'qwerty',
+        'HOST': 'localhost',
+        'PORT': '',
+    }
 }
+
 
 INSTALLED_APPS = (
     'django.contrib.contenttypes',
@@ -18,9 +23,13 @@ INSTALLED_APPS = (
 
 MIDDLEWARE = []
 
-ROOT_URLCONF = 'tests.urls'
+ROOT_URLCONF = 'pico_framework.urls'
 
 USE_TZ = True
+
+TIME_ZONE = 'Europe/Warsaw'
+
+USE_L10N = True
 
 SECRET_KEY = 'foobar'
 
@@ -34,7 +43,7 @@ STATIC_URL = '/static/'
 
 PICO_FRAMEWORK = {
     'PAIRS': [
-        ('BIT', 'ETH'),
+        (2, 3),
     ],
     'DJANGO_SETTINGS_MODULE': 'tests.settings',
     'DJANGO_CONFIGURATION': 'LocalTest'

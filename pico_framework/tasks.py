@@ -3,8 +3,10 @@ import importlib
 
 from celery.task import periodic_task
 
-from pico_framework.models import CurrentMarketPrice
+from pico_framework import models
 from pico_framework import settings
+from pico_framework import utils
+from pico_framework import consts
 
 
 class Sync(object):
@@ -19,27 +21,35 @@ class Sync(object):
             if price is None:
                 return
 
-            last_price = None
-            try:
-                last_stat = CurrentMarketPrice.objects.get(
-                    stock_id=stock_id,
-                    unit_id=unit_id)
-                last_price = float(last_stat.price)
-            except CurrentMarketPrice.DoesNotExist:
-                last_stat = CurrentMarketPrice(
-                    stock_id=stock_id,
-                    unit_id=unit_id
-                )
+            last_stat = models.CurrentMarketPrice.objects.filter(
+                stock_id=stock_id, unit_id=unit_id).last()
 
-            last_stat.change = 0
+            last_price = float(last_stat.price) if last_stat else 0
+
+            current_stat = models.CurrentMarketPrice(
+                stock_id=stock_id,
+                unit_id=unit_id
+            )
+
+            current_stat.change = 0
+
             if last_price:
-                last_stat.change = 100*(price - last_price)/price
+                current_stat.change = 100*(price - last_price)/min(
+                    price, last_price)
 
-            last_stat.price = price
-            last_stat.save()
+            current_stat.price = price
+            current_stat.save()
             new_stats.append(last_stat)
 
         self.call_handlers(new_stats)
+
+    def run_updates_stats(self):
+        # Clear old stats from DB
+        models.StatsMarketPrice.objects.all().delete()
+        for granularity in settings.get_settings('GRANULARITY'):
+            queryset = models.CurrentMarketPrice.objects.all()
+            utils.perform_updates(queryset,
+                                  consts.GRANULARITY_INVERT_MAP[granularity])
 
     def get_market_price(self, stock_id, unit_id):
         response = requests.get(self.orderbook_url,
@@ -65,7 +75,7 @@ class Sync(object):
 
             callback = getattr(module, callback)
 
-            if hasattr(callback, '__all__'):
+            if hasattr(callback, '__call__'):
                 callback(price_stats)
 
 
@@ -73,3 +83,9 @@ class Sync(object):
 def sync_task():
     sync = Sync()
     return sync.process()
+
+
+@periodic_task(run_every=settings.get_settings('SYNC_GRANULARITY_EVERY'))
+def sync_task():
+    sync = Sync()
+    return sync.run_updates_stats()
