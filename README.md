@@ -1,6 +1,5 @@
-=====
-Pico framework
-=====
+
+### Pico framework ###
 
 Quick start
 -----------
