@@ -42,9 +42,8 @@ Default settings:
 
     DEFAULTS = {
         'PAIRS': [],    # list by tuples. Example (2, 3) => 'ETH\BTC'
-        'SYNC_GRANULARITIES_EVERY": 60, (seconds)
-        'SYNC_TASK_EVERY': 15, (seconds)
-        'GRANULARITY': ['1h', '24h', '7d', '14d', 'month', 'year']
+        'SYNC_GRANULARITIES_EVERY": 3600, (seconds)
+        'SYNC_TASK_EVERY': 60, (seconds)
         'CALLBACK_TASKS': [] # list by paths with dote separate to the function
     }
     
