@@ -1,4 +1,4 @@
-from rest_framework import generics, exceptions
+from rest_framework import generics
 from pico_framework import sers
 from pico_framework import models
 from pico_framework import consts
@@ -19,6 +19,9 @@ class StatsPriceView(generics.ListAPIView):
             queryset =queryset.filter(unit_id=unit_id, stock_id=stock_id)
 
         if last:
+            if last not in consts.GRANULARITY_INVERT_MAP:
+                return queryset
+
             queryset = queryset.filter(
                 granularity=consts.GRANULARITY_INVERT_MAP[last])
 
