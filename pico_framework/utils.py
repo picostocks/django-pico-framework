@@ -121,5 +121,5 @@ def perform_updates(queryset, granularity_kind):
         queryset.filter(updated__lt=stat_period).delete()
 
     if granularity_kind == consts.GRANULARITY_INVERT_MAP['1h']:
-        models.CurrentMarketPrice.objects.filter(
+        queryset.filter(
             updated__lt=timezone.now() - timedelta(days=1)).delete()
