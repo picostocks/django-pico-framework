@@ -1,6 +1,6 @@
 import time
 from datetime import datetime, timedelta
-from django.db import transaction, IntegrityError
+from django.db import transaction
 from django.utils import timezone
 
 from pico_framework import sers
@@ -119,3 +119,7 @@ def perform_updates(queryset, granularity_kind):
     if granularity_kind not in [consts.GRANULARITY_INVERT_MAP['1h'],
                                 consts.GRANULARITY_INVERT_MAP['year']]:
         queryset.filter(updated__lt=stat_period).delete()
+
+    if granularity_kind == consts.GRANULARITY_INVERT_MAP['1h']:
+        models.CurrentMarketPrice.objects.filter(
+            updated__lt=timezone.now() - timedelta(days=1)).delete()
