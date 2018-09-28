@@ -1,8 +1,7 @@
 import time
 from datetime import datetime, timedelta
-from django.db import transaction, IntegrityError
+from django.db import transaction
 from django.utils import timezone
-from django.db.models import Avg, Count
 
 from pico_framework import sers
 from pico_framework import models
@@ -29,6 +28,7 @@ def get_stats_price(pairs=None):
 
 
 def perform_updates(queryset, granularity_kind):
+    print('Starts creating stats for granularity %s' % granularity_kind)
     print('Starts creating stats for granularity {}'.format(granularity_kind))
     # Time in second for each stats
     granularity_seconds = \
@@ -45,70 +45,81 @@ def perform_updates(queryset, granularity_kind):
 
     stat_queryset = queryset.all().filter(updated__gte=stat_period)
 
-    start_date = stat_period
-    finish_date = stat_period + timedelta(seconds=granularity_seconds)
-    names_stocks = stat_queryset.order_by('stock_id', 'unit_id').distinct(
-        'stock_id', 'unit_id').values('stock_id', 'unit_id')
-
     prices = {}
-    for item in names_stocks:
+    for item in stat_queryset:
 
-        bind_id = 0
+        idx = (item.stock_id, item.unit_id)
 
-        while True:
+        timestamp_delta = now_seconds - int(item.updated.timestamp())
+        bin_id = int(timestamp_delta / granularity_seconds)
 
-            idx = (item['stock_id'], item['unit_id'])
-            # All current pair in this time slice
-            stat = stat_queryset.filter(
-                updated__gte=start_date, updated__lt=finish_date,
-                stock_id=item['stock_id'], unit_id=item['unit_id']).\
-                order_by('-updated')
+        if idx not in prices:
+            prices[idx] = {}
 
-            # Agregate
-            value = stat.annotate(
-                average_price=Avg('price')).\
-                aggregate(Avg('average_price'), items=Count('id'))
+        if bin_id not in prices[idx]:
+            prices[idx][bin_id] = {'sum': 0, 'items': 0}
 
-            if value['average_price__avg']:
-                bind_id += 1
-                if idx not in prices:
-                    prices[idx] = {}
-
-                if bind_id not in prices[idx]:
-                    prices[idx][bind_id] = {'avg': 0, 'items': 0}
-
-                prices[idx][bind_id]['avg'] = value['average_price__avg']
-                prices[idx][bind_id]['items'] = value['items']
-
-            start_date = finish_date
-            finish_date = finish_date + timedelta(seconds=granularity_seconds)
-
-            if start_date > datetime.fromtimestamp(aligned_timestamp):
-                break
-
+        prices[idx][bin_id]['sum'] += item.price
+        prices[idx][bin_id]['items'] += 1
     print('Created prices dict: %s' % prices)
+
+    max_bin_id = int(span_delta / granularity_seconds)
+
+    # To ensure we have prices, when no transaction was made during stat period
+    if granularity_kind == consts.GRANULARITY_INVERT_MAP['1h']:
+        print('Ensure prices for stocks with no transactions made...')
+        for stock_id, unit_id in pico_settings.get_settings('PAIRS'):
+            idx = (stock_id, unit_id)
+
+            if idx not in prices:
+                prices[idx] = {}
+
+            if max_bin_id not in prices[idx]:
+                order = queryset.filter(stock_id=stock_id,
+                                        unit_id=unit_id).first()
+                if not order:
+                    continue
+                print(
+                    'Using latest transaction data (price: %s, idx: %s)' % (
+                        order.price, idx
+                    ))
+                prices[idx] = {max_bin_id: {'sum': order.price, 'items': 1}}
+                print('Price stats for stocks with no transactions were filled.')
+
+            for bin_id in range(max(prices[idx])-1, -1, -1):
+                print('Filling up gaps.. using price from previous bins.')
+                if bin_id not in prices[idx]:
+                    print('Adding new bin id: %s for idx: %s' % (bin_id, idx))
+                    prices[idx][bin_id] = prices[idx][bin_id+1]
+                print('Finished filling up gaps.')
 
     for market, buckets in prices.items():
         for bin_id, market_stat in buckets.items():
-            updated = now_seconds - int(granularity_seconds / 2)
-
-            updated = timezone.datetime.fromtimestamp(updated)
+            sync = now_seconds - bin_id * granularity_seconds - int(
+                granularity_seconds/2)
+            sync = timezone.datetime.fromtimestamp(sync, tz=timezone.utc)
 
             stat_params = dict(
                 stock_id=market[0],
                 unit_id=market[1],
                 granularity=granularity_kind,
-                updated=updated,
-                price=market_stat['avg']
+                updated=sync
             )
 
             with transaction.atomic():
                 try:
-                    try:
-                        stat = models.StatsMarketPrice.objects.get(**stat_params)
-                    except models.StatsMarketPrice.DoesNotExist:
-                        stat = models.StatsMarketPrice(**stat_params)
-                    stat.save()
+                    stat = models.StatsMarketPrice.objects.get(**stat_params)
                     print('Created price stats for %s' % stat_params)
-                except IntegrityError:
-                    pass
+                except models.StatsMarketPrice.DoesNotExist:
+                    stat = models.StatsMarketPrice(**stat_params)
+                stat.price = market_stat['sum'] / market_stat['items']
+                stat.save()
+
+    # Delete stats which are not used more
+    if granularity_kind not in [consts.GRANULARITY_INVERT_MAP['1h'],
+                                consts.GRANULARITY_INVERT_MAP['year']]:
+        queryset.filter(updated__lt=stat_period).delete()
+
+    if granularity_kind == consts.GRANULARITY_INVERT_MAP['1h']:
+        queryset.filter(
+            updated__lt=timezone.now() - timedelta(days=1)).delete()

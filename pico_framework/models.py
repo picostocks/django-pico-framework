@@ -1,3 +1,5 @@
+from datetime import timedelta
+from django.utils import timezone
 from django.db import models
 
 from pico_framework import consts
@@ -42,3 +44,12 @@ class StatsMarketPrice(models.Model):
                                        self.get_stock_id_display(),
                                        self.get_unit_id_display(),
                                        self.price)
+
+    @classmethod
+    def last_day_stats(cls, **kwargs):
+        granularity = consts.GRANULARITY_INVERT_MAP['7d']
+        yesterday = timezone.localtime(timezone.now()) - timedelta(days=1)
+        return cls.objects.filter(granularity=granularity,
+                                  updated__year=yesterday.year,
+                                  updated__month=yesterday.month,
+                                  updated__day=yesterday.day, **kwargs)

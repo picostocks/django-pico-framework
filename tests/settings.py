@@ -3,12 +3,8 @@ from pico_framework.settings import DEFAULTS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'pico_test',
-        'USER': 'pico_test',
-        'PASSWORD': 'qwerty',
-        'HOST': 'localhost',
-        'PORT': '',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'test_db.sqlite3',
     }
 }
 

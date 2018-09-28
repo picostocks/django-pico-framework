@@ -1,6 +1,6 @@
 import requests
 import importlib
-
+from django.db.models import Avg
 from celery.task import periodic_task
 
 from pico_framework import models
@@ -21,21 +21,17 @@ class Sync(object):
             if price is None:
                 return
 
-            last_stat = models.CurrentMarketPrice.objects.filter(
-                stock_id=stock_id, unit_id=unit_id).last()
-
-            last_price = float(last_stat.price) if last_stat else 0
+            last_stat = models.StatsMarketPrice.last_day_stats(
+                stock_id=stock_id, unit_id=unit_id)
 
             current_stat = models.CurrentMarketPrice(
-                stock_id=stock_id,
-                unit_id=unit_id
-            )
+                stock_id=stock_id, unit_id=unit_id)
 
             current_stat.change = 0
 
-            if last_price:
-                current_stat.change = 100*(price - last_price)/min(
-                    price, last_price)
+            if last_stat:
+                current_stat.change = \
+                    last_stat.aggregate(Avg(price))['price__avg']
 
             current_stat.price = price
             current_stat.save()
@@ -43,13 +39,32 @@ class Sync(object):
 
         self.call_handlers(new_stats)
 
-    def run_updates_stats(self):
-        # Clear old stats from DB
-        models.StatsMarketPrice.objects.all().delete()
-        for granularity in settings.get_settings('GRANULARITY'):
-            queryset = models.CurrentMarketPrice.objects.all()
-            utils.perform_updates(queryset,
-                                  consts.GRANULARITY_INVERT_MAP[granularity])
+    def run_updates(self):
+        for queryset, granularity_kind in [
+            (models.CurrentMarketPrice.objects.all(),
+             consts.GRANULARITY_INVERT_MAP['1h']),
+
+            (models.StatsMarketPrice.objects.filter(
+                granularity=consts.GRANULARITY_INVERT_MAP['1h']),
+             consts.GRANULARITY_INVERT_MAP['24h']),
+
+            (models.StatsMarketPrice.objects.filter(
+                granularity=consts.GRANULARITY_INVERT_MAP['24h']),
+             consts.GRANULARITY_INVERT_MAP['7d']),
+
+            (models.StatsMarketPrice.objects.filter(
+                granularity=consts.GRANULARITY_INVERT_MAP['7d']),
+             consts.GRANULARITY_INVERT_MAP['14d']),
+
+            (models.StatsMarketPrice.objects.filter(
+                granularity=consts.GRANULARITY_INVERT_MAP['14d']),
+             consts.GRANULARITY_INVERT_MAP['month']),
+
+            (models.StatsMarketPrice.objects.filter(
+                granularity=consts.GRANULARITY_INVERT_MAP['month']),
+             consts.GRANULARITY_INVERT_MAP['year'])]:
+
+            utils.perform_updates(queryset, granularity_kind)
 
     def get_market_price(self, stock_id, unit_id):
         response = requests.get(self.orderbook_url,
@@ -88,4 +103,4 @@ def sync_task():
 @periodic_task(run_every=settings.get_settings('SYNC_GRANULARITY_EVERY'))
 def sync_task():
     sync = Sync()
-    return sync.run_updates_stats()
+    return sync.run_updates()
