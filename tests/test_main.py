@@ -26,7 +26,7 @@ class TestCurrencyPrice(TestCase):
                 unit_id=BTC_ID, stock_id=ETH_ID,
                 price=price, change=abs(last.price - price)
                 if last else 0)
-            last.updated = time_
+            last.added = time_
             last.save()
         Sync().run_updates()
 
