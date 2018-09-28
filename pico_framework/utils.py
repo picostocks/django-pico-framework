@@ -1,4 +1,5 @@
-import time, datetime
+import time
+import datetime
 from django.db.models import Avg
 
 from pico_framework import sers
@@ -25,8 +26,8 @@ def get_current_price(pairs=None):
     return result
 
 
-def get_price_stats(stock_id, unit_id, granturality=consts.GRANULARITY_FORTNIGHTLY):
-    queryset = models.StatsMarketPrice.objects.filter(granturality=granturality)
+def get_price_stats(stock_id, unit_id, granularity=consts.GRANULARITY_FORTNIGHTLY):
+    queryset = models.StatsMarketPrice.objects.filter(granularity=granularity)
 
     if stock_id and unit_id:
         queryset = queryset.filter(unit_id=unit_id, stock_id=stock_id)
@@ -34,24 +35,26 @@ def get_price_stats(stock_id, unit_id, granturality=consts.GRANULARITY_FORTNIGHT
     return sers.StatsMarketPriceSerializer(queryset, many=True).data
 
 
-def align_timestamp(timestamp_seconds=None, granurality=consts.GRANULARITY_HOUR):
+def align_timestamp(timestamp_seconds=None, granularity=consts.GRANULARITY_HOUR):
     if timestamp_seconds is None:
         timestamp_seconds = time.time()
 
-    granularity_seconds = 60 * consts.GRANULARITY_KINDS[granurality]['time']
+    granularity_seconds = 60 * consts.GRANULARITY_KINDS[granularity]['time']
     return timestamp_seconds - (timestamp_seconds % granularity_seconds)
 
 
 def get_change(stock_id, unit_id):
     day_seconds = 24*60*60
 
-    yestarday_timestamp_seconds = time.time() - day_seconds
-    yestarday_timestamp_aligned = int(yestarday_timestamp_seconds/day_seconds)*day_seconds
-    yestarday_aligned = datetime.fromtimestamp(yestarday_timestamp_aligned)
+    yesterday_timestamp_seconds = time.time() - day_seconds
+    yesterday_timestamp_aligned = \
+        int(yesterday_timestamp_seconds/day_seconds)*day_seconds
+    yesterday_aligned = datetime.datetime.fromtimestamp(
+        yesterday_timestamp_aligned)
 
     return models.StatsMarketPrice.objects.objects.filter(
         granularity=consts.GRANULARITY_FORTNIGHTLY,
-        added = yestarday_aligned,
+        added=yesterday_aligned,
         stock_id = stock_id,
         unit_id=unit_id
     ).aggregate(Avg('price'))['price__avg']

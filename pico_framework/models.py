@@ -1,5 +1,3 @@
-from datetime import timedelta
-from django.utils import timezone
 from django.db import models
 
 from pico_framework import consts
@@ -13,7 +11,7 @@ class StatsMarketPrice(models.Model):
     added = models.DateTimeField()
 
     class Meta:
-        ordering = ('-updated', )
+        ordering = ('-added', )
         indexes = [
             models.Index(fields=['unit_id', 'stock_id', 'granularity']),
         ]

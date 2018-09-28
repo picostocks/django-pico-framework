@@ -31,7 +31,7 @@ def get_market_price(stock_id, unit_id):
     return (float(bids[0]['price']) + float(asks[0]['price'])) / 2
 
 
-def notify_new_price(self, price_stats):
+def notify_new_price(price_stats):
     for path in settings.get_settings('CALLBACK_TASK'):
         s_path = path.split('.')
         callback = s_path[-1]
@@ -47,11 +47,12 @@ def notify_new_price(self, price_stats):
 def _sync_current_price():
     new_stats = []
 
-    aligned_timestamp = utils.align_timestamp(granurality=consts.GRANULARITY_MINUTE)
+    aligned_timestamp = utils.align_timestamp(
+        granularity=consts.GRANULARITY_MINUTE)
     aligned_datetime = datetime.fromtimestamp(aligned_timestamp)
 
     for stock_id, unit_id in settings.get_settings('PAIRS'):
-        last_stat = models.StatsMarketPrice.filter(
+        last_stat = models.StatsMarketPrice.objects.filter(
             stock_id=stock_id,
             unit_id=unit_id,
             added=aligned_datetime).first()
@@ -63,11 +64,11 @@ def _sync_current_price():
             return
 
         last_stat = models.StatsMarketPrice.objects.create(
-            unit_id = unit_id,
-            stock_id = stock_id,
-            granularity = consts.GRANULARITY_MINUTE,
-            price = price,
-            added = aligned_datetime
+            unit_id=unit_id,
+            stock_id=stock_id,
+            granularity=consts.GRANULARITY_MINUTE,
+            price=price,
+            added=aligned_datetime
         )
 
         new_stats.append(last_stat)
@@ -76,8 +77,8 @@ def _sync_current_price():
 
 
 @periodic_task(run_every=settings.get_settings('SYNC_PRICE_EVERY'))
-def sync_curret_price_task():
-    return _sync_current_price()
+def sync_current_price_task():
+    _sync_current_price()
 
 
 def _perform_stats_updates(queryset, granularity_kind):
@@ -175,13 +176,16 @@ def _perform_stats_updates(queryset, granularity_kind):
 
 def _sync_stats_task():
     for queryset, granularity_kind in [
-        (models.StatsMarketPrice.objects.filter(granularity=consts.GRANULARITY_MINUTES),
+        (models.StatsMarketPrice.objects.filter(
+            granularity=consts.GRANULARITY_MINUTE),
          consts.GRANULARITY_HOUR),
 
-        (models.StatsMarketPrice.objects.filter(granularity=consts.GRANULARITY_HOUR),
+        (models.StatsMarketPrice.objects.filter(
+            granularity=consts.GRANULARITY_HOUR),
          consts.GRANULARITY_DAY),
 
-        (models.StatsMarketPrice.objects.filter(granularity=consts.GRANULARITY_DAY),
+        (models.StatsMarketPrice.objects.filter(
+            granularity=consts.GRANULARITY_DAY),
          consts.GRANULARITY_WEEK),
 
         (models.StatsMarketPrice.objects.filter(

@@ -1,5 +1,4 @@
 # ensure package/conf is importable
-from pico_framework.settings import DEFAULTS
 
 DATABASES = {
     'default': {
@@ -18,8 +17,6 @@ INSTALLED_APPS = (
 )
 
 MIDDLEWARE = []
-
-ROOT_URLCONF = 'pico_framework.urls'
 
 USE_TZ = True
 
