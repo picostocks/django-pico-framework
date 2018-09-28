@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='statsmarketprice',
-            index=models.Index(fields=['unit_id', 'stock_id'], name='pico_framew_unit_id_319dd1_idx'),
+            index=models.Index(fields=['unit_id', 'stock_id', 'granularity'], name='pico_framew_unit_id_319dd1_idx'),
         ),
         migrations.AddIndex(
             model_name='currentmarketprice',

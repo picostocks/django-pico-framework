@@ -36,7 +36,7 @@ class StatsMarketPrice(models.Model):
     class Meta:
         ordering = ('-id', )
         indexes = [
-            models.Index(fields=['unit_id', 'stock_id']),
+            models.Index(fields=['unit_id', 'stock_id', 'granularity']),
         ]
 
     def __str__(self):
