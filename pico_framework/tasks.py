@@ -110,7 +110,7 @@ def _perform_stats_updates(queryset, granularity_kind):
         prices[idx]['items'] += 1
 
     for market, buckets in prices.items():
-        sync = aligned_timestamp - span_delta/2
+        sync = aligned_timestamp + span_delta/2
 
         sync = timezone.datetime.fromtimestamp(sync)
 
