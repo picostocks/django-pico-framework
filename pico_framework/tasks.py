@@ -150,7 +150,7 @@ def _perform_stats_updates(queryset, granularity_kind):
 
     for market, buckets in prices.items():
         for bin_id, market_stat in buckets.items():
-            sync = now_seconds - bin_id * granularity_seconds - int(
+            sync = aligned_timestamp - bin_id * granularity_seconds - int(
                 granularity_seconds/2)
             sync = timezone.datetime.fromtimestamp(sync, tz=timezone.utc)
 
