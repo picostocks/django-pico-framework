@@ -8,6 +8,7 @@ class StatsMarketPriceSerializer(serializers.ModelSerializer):
     stock_code = serializers.SerializerMethodField()
     unit_code = serializers.SerializerMethodField()
     price = serializers.SerializerMethodField()
+    added = serializers.SerializerMethodField()
 
     class Meta:
         model = models.StatsMarketPrice
@@ -24,6 +25,9 @@ class StatsMarketPriceSerializer(serializers.ModelSerializer):
 
     def get_price(self, obj):
         return "{:.5f}".format(obj.price)
+
+    def get_added(self, obj):
+        return int(obj.added.strftime('%s'))
 
 
 class CurrentMarketPriceSerializer(StatsMarketPriceSerializer):
