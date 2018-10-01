@@ -17,7 +17,8 @@ class StatsMarketPrice(models.Model):
         ]
 
     def __str__(self):
-        return '{}: {}\{} - {}'.format(self.get_granularity_display(),
-                                       self.get_stock_id_display(),
-                                       self.get_unit_id_display(),
-                                       self.price)
+        return '{}-{}: {}\{} - {}'.format(self.get_granularity_display(),
+                                          self.added,
+                                          self.get_stock_id_display(),
+                                          self.get_unit_id_display(),
+                                          self.price)
