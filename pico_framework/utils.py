@@ -26,13 +26,23 @@ def get_current_price(pairs=None):
     return result
 
 
-def get_price_stats(stock_id, unit_id, granularity=consts.GRANULARITY_FORTNIGHTLY):
-    queryset = models.StatsMarketPrice.objects.filter(granularity=granularity)
+def get_price_stats(pairs=None, granularity=consts.GRANULARITY_FORTNIGHTLY):
 
-    if stock_id and unit_id:
-        queryset = queryset.filter(unit_id=unit_id, stock_id=stock_id)
+    if pairs is None:
+        pairs = pico_settings.get_settings('PAIRS')
 
-    return sers.StatsMarketPriceSerializer(queryset, many=True).data
+    result = []
+    for pair in pairs:
+        queryset = models.StatsMarketPrice.objects.filter(granularity=granularity,
+                                                          stock_id = pair[0],
+                                                          unit_id = pair[1])
+        if queryset:
+            result.append({
+                'stock_id':pair[0],
+                'unit_id':pair[1],
+                'values':sers.StatsMarketPriceSerializer(queryset, many=True).data
+            })
+    return result
 
 
 def align_timestamp(timestamp_seconds=None, granularity=consts.GRANULARITY_HOUR):
