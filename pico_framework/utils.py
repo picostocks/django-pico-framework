@@ -20,7 +20,7 @@ def get_current_price(pairs=None):
     result = []
     for pair in pairs:
         queryset = models.StatsMarketPrice.objects.filter(
-            unit_id=pair[1], stock_id=pair[0], granurality=consts.GRANULARITY_MINUTE)
+            unit_id=pair[1], stock_id=pair[0], granularity=consts.GRANULARITY_MINUTE)
         if queryset:
             result.append(sers.CurrentMarketPriceSerializer(queryset.last()).data)
     return result
@@ -62,7 +62,7 @@ def get_change(stock_id, unit_id):
     yesterday_aligned = datetime.datetime.fromtimestamp(
         yesterday_timestamp_aligned)
 
-    return models.StatsMarketPrice.objects.objects.filter(
+    return models.StatsMarketPrice.objects.filter(
         granularity=consts.GRANULARITY_FORTNIGHTLY,
         added=yesterday_aligned,
         stock_id = stock_id,
