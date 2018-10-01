@@ -158,6 +158,7 @@ def _perform_stats_updates(queryset, granularity_kind):
                 stock_id=market[0],
                 unit_id=market[1],
                 granularity=granularity_kind,
+                added=sync
             )
 
             with transaction.atomic():
@@ -166,7 +167,6 @@ def _perform_stats_updates(queryset, granularity_kind):
                     print('Created price stats for %s' % stat_params)
                 except models.StatsMarketPrice.DoesNotExist:
                     stat = models.StatsMarketPrice(**stat_params)
-                stat.added = sync
                 stat.price = market_stat['sum'] / market_stat['items']
                 stat.save()
 
