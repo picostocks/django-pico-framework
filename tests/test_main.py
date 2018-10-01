@@ -30,7 +30,8 @@ class TestCurrencyPrice(TestCase):
         self.assertEqual(price, float(instance.price))
 
     def test_perform_stats_updates(self):
-        for _ in range(2):
+        self.count = 2
+        for _ in range(self.count):
             tasks._sync_current_price()
             tasks._sync_stats_task()
             time.sleep(60)
@@ -38,7 +39,7 @@ class TestCurrencyPrice(TestCase):
         stats_minutes = models.StatsMarketPrice.objects.filter(
             granularity=consts.GRANULARITY_MINUTE)
 
-        self.assertEqual(len(stats_minutes), 2)
+        self.assertEqual(len(stats_minutes), self.count)
 
         stats_hour = models.StatsMarketPrice.objects.filter(
             granularity=consts.GRANULARITY_HOUR)
@@ -54,3 +55,13 @@ class TestCurrencyPrice(TestCase):
             granularity=consts.GRANULARITY_FORTNIGHTLY)
 
         self.assertEqual(len(stats_2week), 1)
+
+        stats_month = models.StatsMarketPrice.objects.filter(
+            granularity=consts.GRANULARITY_MONTH)
+
+        self.assertEqual(len(stats_month), 1)
+
+        stats_year = models.StatsMarketPrice.objects.filter(
+            granularity=consts.GRANULARITY_YEAR)
+
+        self.assertEqual(len(stats_year), 1)
