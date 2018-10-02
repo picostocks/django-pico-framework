@@ -2,7 +2,7 @@ import time
 import os
 import requests
 import importlib
-from celery.task import periodic_task
+from celery import shared_task
 from datetime import datetime, timedelta
 from django.db import transaction
 from django.utils import timezone
@@ -78,7 +78,7 @@ def _sync_current_price():
     notify_new_price(new_stats)
 
 
-@periodic_task(run_every=settings.get_settings('SYNC_PRICE_EVERY'))
+@shared_task
 def sync_current_price_task():
     _sync_current_price()
 
@@ -163,6 +163,6 @@ def _sync_stats_task():
         _perform_stats_updates(queryset, granularity_kind)
 
 
-@periodic_task(run_every=settings.get_settings('SYNC_STATS_EVERY'))
+@shared_task
 def sync_stats_task():
     return _sync_stats_task()
