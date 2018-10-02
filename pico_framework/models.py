@@ -6,7 +6,7 @@ from pico_framework import consts
 class StatsMarketPrice(models.Model):
     unit_id = models.IntegerField(choices=consts.STOCK_CHOICES)
     stock_id = models.IntegerField(choices=consts.STOCK_CHOICES)
-    price = models.DecimalField(max_digits=18, decimal_places=9)
+    price = models.DecimalField(max_digits=27, decimal_places=18)
     granularity = models.IntegerField(choices=consts.GRANULARITY_CHOICES)
     added = models.DateTimeField()
 

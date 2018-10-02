@@ -36,8 +36,9 @@ STATIC_URL = '/static/'
 
 PICO_FRAMEWORK = {
     'PAIRS': [
-        (2, 3),
+        (3, 2),
     ],
-    'DJANGO_SETTINGS_MODULE': 'tests.settings',
-    'DJANGO_CONFIGURATION': 'LocalTest'
+    'CALLBACK_TASK': (
+        'tests.test_main.test_callback',
+    )
 }

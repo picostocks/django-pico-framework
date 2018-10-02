@@ -1,121 +1,67 @@
-import datetime
-import random
+import time
 from django.test import TestCase
-from django.utils import timezone
-from django.urls import reverse
 
 from pico_framework import models
-from pico_framework.tasks import Sync
-from pico_framework.consts import BTC_ID, ETH_ID, STOCK_CHOICES
-from pico_framework.utils import get_stats_price
+from pico_framework import consts
+from pico_framework import tasks
+
+TEST_VALUE = 0
+
+
+def test_callback(result):
+    assert result
 
 
 class TestCurrencyPrice(TestCase):
     def setUp(self):
-        self.sync = Sync()
+        pass
 
-    def _create_price_markets(self, count, r=60, hours=0):
-        last = None
-        for _ in range(count):
-            time_ = timezone.localtime(timezone.now()) - \
-                    datetime.timedelta(hours=hours) - \
-                    datetime.timedelta(minutes=random.randint(0, r))
+    def test_get_market_price(self):
+         price = tasks.get_market_price(3, 2)
 
-            price = random.randint(1, 100)
-            last = models.CurrentMarketPrice.objects.create(
-                unit_id=BTC_ID, stock_id=ETH_ID,
-                price=price, change=abs(last.price - price)
-                if last else 0)
-            last.added = time_
-            last.save()
-        Sync().run_updates()
+         self.assertTrue(price)
+         self.assertIsInstance(price, float)
 
-    def test_representations_model_currency_pair(self):
-        models.CurrentMarketPrice.objects.create(
-            unit_id=BTC_ID, stock_id=ETH_ID, price=23, change=1)
-        currency = models.CurrentMarketPrice.objects.last()
-        self.assertEqual(str(currency), '{}\{} - {}'.format(
-            STOCK_CHOICES[1][1], STOCK_CHOICES[0][1], currency.price))
+    def test_sync_current_price(self):
+        tasks._sync_current_price()
+        price = tasks.get_market_price(3, 2)
+        instance = models.StatsMarketPrice.objects.first()
 
-    def test_plural_model_currency_pair(self):
-        self.assertEqual(models.CurrentMarketPrice._meta.verbose_name_plural,
-                         'current market prices')
+        self.assertEqual(price, float(instance.price))
 
-    def test_get_price(self):
-        models.CurrentMarketPrice.objects.create(
-            unit_id=BTC_ID, stock_id=ETH_ID, price=23, change=1)
-        models.CurrentMarketPrice.objects.create(
-            unit_id=BTC_ID, stock_id=ETH_ID, price=21, change=3)
-        prices = get_stats_price([(ETH_ID, BTC_ID)])
+    def test_perform_stats_updates(self):
+        self.count = 2
+        for _ in range(self.count):
+            tasks._sync_current_price()
+            tasks._sync_stats_task()
+            time.sleep(60)
 
-        self.assertEqual(len(prices), 1)
-        self.assertTrue(len(prices[0]))
-        self.assertTrue(prices[0].get('price'))
+        stats_minutes = models.StatsMarketPrice.objects.filter(
+            granularity=consts.GRANULARITY_MINUTE)
 
-    def test_get_stats(self):
-        self._create_price_markets(count=1000)
-        self.assertTrue(len(models.StatsMarketPrice.objects.filter(
-            granularity=1)))
+        self.assertEqual(len(stats_minutes), self.count)
 
-        url = reverse('pico-framework-stats')
+        stats_hour = models.StatsMarketPrice.objects.filter(
+            granularity=consts.GRANULARITY_HOUR)
 
-        self.assertTrue('stats' in url)
+        self.assertEqual(len(stats_hour), 1, stats_hour)
 
-        response = self.client.get(url, {'range': '1h'})
+        stats_week = models.StatsMarketPrice.objects.filter(
+            granularity=consts.GRANULARITY_WEEK)
 
-        self.assertEqual(response.status_code, 200)
-        self.assertIsInstance(response.json(), list)
-        self.assertTrue(response.json())
+        self.assertEqual(len(stats_week), 1)
 
-    def test_get_stats_with_not_correct_pair(self):
-        self._create_price_markets(count=1000)
-        self.assertTrue(len(models.StatsMarketPrice.objects.filter(
-            granularity=1)))
+        stats_2week = models.StatsMarketPrice.objects.filter(
+            granularity=consts.GRANULARITY_FORTNIGHTLY)
 
-        url = reverse('pico-framework-stats')
+        self.assertEqual(len(stats_2week), 1)
 
-        self.assertTrue('stats' in url)
+        stats_month = models.StatsMarketPrice.objects.filter(
+            granularity=consts.GRANULARITY_MONTH)
 
-        response = self.client.get(url, {'range': '1h', 'stock_id': 4,
-                                         'unit_id': 5})
+        self.assertEqual(len(stats_month), 1)
 
-        self.assertEqual(response.status_code, 200)
-        self.assertIsInstance(response.json(), list)
-        self.assertFalse(response.json())
+        stats_year = models.StatsMarketPrice.objects.filter(
+            granularity=consts.GRANULARITY_YEAR)
 
-    def test_get_stats_for_day(self):
-        for i in range(1, 24):
-            self._create_price_markets(count=100, hours=i)
-        self.assertTrue(len(models.StatsMarketPrice.objects.filter(
-            granularity=2)))
-
-        url = reverse('pico-framework-stats')
-
-        self.assertTrue('stats' in url)
-
-        response = self.client.get(url, {'range': '24h', 'stock_id': 3,
-                                         'unit_id': 2})
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIsInstance(response.json(), list)
-        self.assertTrue(response.json())
-
-    def test_get_stats_for_week(self):
-        for i in range(0, 7):
-            self._create_price_markets(count=10, hours=24*i)
-        self.assertTrue(len(models.StatsMarketPrice.objects.filter(
-            granularity=3)))
-
-        url = reverse('pico-framework-stats')
-
-        self.assertTrue('stats' in url)
-
-        response = self.client.get(url, {'range': '7d', 'stock_id': 3,
-                                         'unit_id': 2})
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIsInstance(response.json(), list)
-        self.assertTrue(response.json())
-        self.assertEqual(
-            len(response.json()),
-            len(models.StatsMarketPrice.objects.filter(granularity=3)))
+        self.assertEqual(len(stats_year), 1)
