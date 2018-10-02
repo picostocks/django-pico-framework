@@ -130,7 +130,7 @@ def _perform_stats_updates(queryset, granularity_kind):
                 except models.StatsMarketPrice.DoesNotExist:
                     stat = models.StatsMarketPrice(**stat_params)
                     print('Created price stats for {}'.format(stat_params))
-                stat.price = buckets['sum'] / buckets['items']
+                stat.price = market_stat['sum'] / market_stat['items']
                 stat.save()
 
     # Delete stats which are not used more
