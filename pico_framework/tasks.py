@@ -5,7 +5,6 @@ import importlib
 from celery import shared_task
 from datetime import datetime, timedelta
 from django.db import transaction
-from django.utils import timezone
 
 from pico_framework import models
 from pico_framework import settings
@@ -87,6 +86,7 @@ def _perform_stats_updates(queryset, granularity_kind):
     print('Starts creating stats for granularity {}'.format(granularity_kind))
     # Time in second for each stats
     span_delta = 60 * consts.GRANULARITY_KINDS[granularity_kind]['span']
+    granularity_time = 60 * consts.GRANULARITY_KINDS[granularity_kind]['time']
 
     # Round to granularity_time
     now_seconds = time.time()
@@ -100,34 +100,38 @@ def _perform_stats_updates(queryset, granularity_kind):
     prices = {}
 
     for item in stat_queryset:
-
         idx = (item.stock_id, item.unit_id)
-
         if idx not in prices:
-            prices[idx] = {'sum': 0, 'items': 0}
+            prices[idx] = {}
 
-        prices[idx]['sum'] += item.price
-        prices[idx]['items'] += 1
+        timestamp_delta = aligned_timestamp - int(item.added.timestamp())
+        bin_id = int(timestamp_delta / granularity_time)
+        if bin_id not in prices[idx]:
+            prices[idx][bin_id] = {'sum': 0, 'items': 0}
+
+
+        prices[idx][bin_id]['sum'] += item.price
+        prices[idx][bin_id]['items'] += 1
 
     for market, buckets in prices.items():
-        sync = aligned_timestamp + span_delta/2
+        for bin_id, market_stat in buckets.items():
+            sync = aligned_timestamp - bin_id*granularity_time-int(granularity_time/2)
+            sync = datetime.fromtimestamp(sync)
 
-        sync = timezone.datetime.fromtimestamp(sync)
+            print('Sync time: {}'.format(sync))
 
-        print('Sync time: {}'.format(sync))
+            stat_params = dict(stock_id=market[0], unit_id=market[1],
+                granularity=granularity_kind, added=sync)
 
-        stat_params = dict(stock_id=market[0], unit_id=market[1],
-            granularity=granularity_kind, added=sync)
-
-        with transaction.atomic():
-            try:
-                stat = models.StatsMarketPrice.objects.get(**stat_params)
-                print('Updated price stats for {}'.format(stat_params))
-            except models.StatsMarketPrice.DoesNotExist:
-                stat = models.StatsMarketPrice(**stat_params)
-                print('Created price stats for {}'.format(stat_params))
-            stat.price = buckets['sum'] / buckets['items']
-            stat.save()
+            with transaction.atomic():
+                try:
+                    stat = models.StatsMarketPrice.objects.get(**stat_params)
+                    print('Updated price stats for {}'.format(stat_params))
+                except models.StatsMarketPrice.DoesNotExist:
+                    stat = models.StatsMarketPrice(**stat_params)
+                    print('Created price stats for {}'.format(stat_params))
+                stat.price = buckets['sum'] / buckets['items']
+                stat.save()
 
     # Delete stats which are not used more
     if granularity_kind != consts.GRANULARITY_YEAR:
