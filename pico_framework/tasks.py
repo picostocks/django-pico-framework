@@ -48,8 +48,7 @@ def notify_new_price(price_stats):
 def _sync_current_price():
     new_stats = []
 
-    aligned_timestamp = utils.align_timestamp(
-        granularity=consts.GRANULARITY_MINUTE)
+    aligned_timestamp = utils.align_timestamp(granularity=consts.GRANULARITY_MINUTE)
 
     for stock_id, unit_id in settings.get_settings('PAIRS'):
         last_stat = models.StatsMarketPrice.objects.filter(

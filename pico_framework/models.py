@@ -9,7 +9,7 @@ class StatsMarketPrice(models.Model):
     stock_id = models.IntegerField(choices=consts.STOCK_CHOICES)
     price = models.DecimalField(max_digits=27, decimal_places=18)
     granularity = models.IntegerField(choices=consts.GRANULARITY_CHOICES)
-    timestamp = models.DateTimeField()
+    timestamp = models.IntegerField()
 
     class Meta:
         ordering = ('-timestamp', )
