@@ -114,7 +114,7 @@ def _perform_stats_updates(queryset, granularity_kind):
                 stock_id=market[0],
                 unit_id=market[1],
                 granularity=granularity_kind,
-                added=sync)
+                timestamp=sync)
 
             with transaction.atomic():
                 try:
