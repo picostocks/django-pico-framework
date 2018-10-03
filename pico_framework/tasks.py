@@ -74,6 +74,12 @@ def _sync_current_price():
 
         new_stats.append(last_stat)
 
+    # Remove stats older than 1 hour
+    models.StatsMarketPrice.objects.filter(
+        granularity=consts.GRANULARITY_MINUTE,
+        timestamp__lt = aligned_timestamp - 3600
+    ).delete()
+
     notify_new_price(new_stats)
 
 
