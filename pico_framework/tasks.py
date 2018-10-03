@@ -127,7 +127,10 @@ def _perform_stats_updates(queryset, granularity_kind):
     # Delete stats which are not used more
     if granularity_kind != consts.GRANULARITY_YEAR:
         span_delta = 60 * consts.GRANULARITY_KINDS[granularity_kind]['span']
-        queryset.filter(timestamp__lt=stat_period-span_delta).delete()
+        models.StatsMarketPrice.objects.filter(
+            timestamp__lt=stat_period - span_delta,
+            granularity=granularity_kind
+        ).delete()
 
 
 def _sync_stats_task():
