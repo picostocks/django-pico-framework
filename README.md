@@ -12,51 +12,27 @@ Quick start
         'pico_framework',
     ]
 
-3. Added to main urls.py
-```python
-from django.urls import path, include
-from pico_framework import urls
 
-urlpatterns = [
-    path('pico-framwork/', include(urls)),
-    """Your urls ...."""
-]
+3. Run `python manage.py migrate` to create table in DB.
 
-```
-``
-url for get stats <your-domain>/pico-framework/stats/?stock_id=1&unit_id=2
-&range=24h
-``
-```text
-stock_id - id from https://picostocks.com/
-unit_id - id form https://picostocks.com/
-range - is period interval statistics (1h, 24h, 1d, 7d, 14d, month, year)
-```
-
-
-4. Run `python manage.py migrate` to create table in DB.
-
-5. Set settings "PICO_FRAMEWORK" in main settings.
+4. Set settings "PICO_FRAMEWORK" in main settings.
 
 Default settings:
 
     DEFAULTS = {
         'PAIRS': [],    # list by tuples. Example (2, 3) => 'ETH\BTC'
-        'SYNC_GRANULARITIES_EVERY": 3600, (seconds)
-        'SYNC_TASK_EVERY': 60, (seconds)
+        'SYNC_PRICE_EVERY": 60, (seconds)
+        'SYNC_STATS_EVERY': 60, (seconds)
         'CALLBACK_TASKS': [] # list by paths with dote separate to the function
     }
+
+5. Configure you celery_app
+
+    from celery import Celery
+    from pico_framework import settings as picofwr_settings
+    from django.conf import settings as django_settings
     
-6. Start a celery process
-```bash
---app=pico_framework.celeryapp:app beat -l info
-```
-
-7. Start a celery worker
-```bash
---app=pico_framework.celeryapp:app worker -l info
-```
-
-#
-Notes that for pico_framework is required PostgresSQL DB.
-#
+    
+    app = Celery('myceleryapp')
+    app.config_from_object(django_settings, namespace='CELERY')
+    picofwr_settings.configure_celery(app)

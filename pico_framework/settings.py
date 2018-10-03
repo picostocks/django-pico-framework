@@ -21,7 +21,7 @@ def configure_celery(celery_app):
         'schedule': get_settings('SYNC_STATS_EVERY')
     }
 
-    celery_app.beat_schedule['pico_fwm_sync_current_price_task'] = {
+    celery_app.conf.beat_schedule['pico_fwm_sync_current_price_task'] = {
         'task': 'pico_framework.tasks.sync_current_price_task',
         'schedule': get_settings('SYNC_PRICE_EVERY')
 
