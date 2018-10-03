@@ -3,7 +3,8 @@ import os
 import requests
 import importlib
 from celery import shared_task
-from datetime import datetime, timedelta
+from datetime import timedelta
+from django.utils import timezone
 from django.db import transaction
 
 from pico_framework import models
@@ -49,7 +50,7 @@ def _sync_current_price():
 
     aligned_timestamp = utils.align_timestamp(
         granularity=consts.GRANULARITY_MINUTE)
-    aligned_datetime = datetime.fromtimestamp(aligned_timestamp)
+    aligned_datetime = timezone.datetime.fromtimestamp(aligned_timestamp)
 
     for stock_id, unit_id in settings.get_settings('PAIRS'):
         last_stat = models.StatsMarketPrice.objects.filter(
@@ -83,59 +84,56 @@ def sync_current_price_task():
 
 
 def _perform_stats_updates(queryset, granularity_kind):
-    print('Starts creating stats for granularity {}'.format(granularity_kind))
-    # Time in second for each stats
-    span_delta = 60 * consts.GRANULARITY_KINDS[granularity_kind]['span']
     granularity_time = 60 * consts.GRANULARITY_KINDS[granularity_kind]['time']
+    now_seconds = int(time.time())
 
-    # Round to granularity_time
-    now_seconds = time.time()
-    aligned_timestamp = now_seconds - (now_seconds % span_delta)
+    # Recalculate data for last 2 timeframes in particular granularity
+    stat_period = now_seconds - 2 * granularity_time
+    stat_period -= stat_period % granularity_time
 
-    stat_period = datetime.fromtimestamp(aligned_timestamp) - \
-                  timedelta(seconds=span_delta)
-
-    stat_queryset = queryset.all().filter(added__gte=stat_period)
+    stat_queryset = queryset.all().filter(
+        added__gte=timezone.datetime.fromtimestamp(stat_period)
+    )
 
     prices = {}
-
     for item in stat_queryset:
         idx = (item.stock_id, item.unit_id)
         if idx not in prices:
             prices[idx] = {}
 
-        timestamp_delta = aligned_timestamp - int(item.added.timestamp())
+        timestamp_delta = int(item.added.timestamp() - stat_period)
         bin_id = int(timestamp_delta / granularity_time)
         if bin_id not in prices[idx]:
             prices[idx][bin_id] = {'sum': 0, 'items': 0}
-
 
         prices[idx][bin_id]['sum'] += item.price
         prices[idx][bin_id]['items'] += 1
 
     for market, buckets in prices.items():
         for bin_id, market_stat in buckets.items():
-            sync = aligned_timestamp - bin_id*granularity_time-int(granularity_time/2)
-            sync = datetime.fromtimestamp(sync)
+            sync = stat_period + bin_id * granularity_time - int(granularity_time / 2)
 
-            print('Sync time: {}'.format(sync))
-
-            stat_params = dict(stock_id=market[0], unit_id=market[1],
-                granularity=granularity_kind, added=sync)
+            stat_params = dict(
+                stock_id=market[0],
+                unit_id=market[1],
+                granularity=granularity_kind,
+                added=timezone.datetime.fromtimestamp(sync))
 
             with transaction.atomic():
                 try:
                     stat = models.StatsMarketPrice.objects.get(**stat_params)
-                    print('Updated price stats for {}'.format(stat_params))
                 except models.StatsMarketPrice.DoesNotExist:
                     stat = models.StatsMarketPrice(**stat_params)
-                    print('Created price stats for {}'.format(stat_params))
                 stat.price = market_stat['sum'] / market_stat['items']
                 stat.save()
 
     # Delete stats which are not used more
     if granularity_kind != consts.GRANULARITY_YEAR:
-        queryset.filter(added__lt=stat_period).delete()
+        span_delta = 60 * consts.GRANULARITY_KINDS[granularity_kind]['span']
+
+        queryset.filter(
+            added__lt=timezone.datetime.fromtimestamp(stat_period-span_delta)
+        ).delete()
 
 
 def _sync_stats_task():
