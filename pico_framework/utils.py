@@ -54,11 +54,11 @@ def align_timestamp(timestamp_seconds=None, granularity=consts.GRANULARITY_HOUR)
 
 
 def get_change(stock_id, unit_id):
-    day_seconds = 24*60*60
-
-    yesterday_timestamp_seconds = time.time() - day_seconds
-    yesterday_timestamp_aligned = \
-        int(yesterday_timestamp_seconds/day_seconds)*day_seconds
+    yesterday_timestamp_seconds = time.time() - 24 * 60 * 60
+    yesterday_timestamp_aligned = align_timestamp(
+        timestamp_seconds=yesterday_timestamp_seconds,
+        granularity=consts.GRANULARITY_FORTNIGHTLY
+    )
 
     return models.StatsMarketPrice.objects.filter(
         granularity=consts.GRANULARITY_FORTNIGHTLY,
