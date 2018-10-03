@@ -59,12 +59,10 @@ def get_change(stock_id, unit_id):
     yesterday_timestamp_seconds = time.time() - day_seconds
     yesterday_timestamp_aligned = \
         int(yesterday_timestamp_seconds/day_seconds)*day_seconds
-    yesterday_aligned = datetime.datetime.fromtimestamp(
-        yesterday_timestamp_aligned)
 
     return models.StatsMarketPrice.objects.filter(
         granularity=consts.GRANULARITY_FORTNIGHTLY,
-        added=yesterday_aligned,
+        timestamp=yesterday_timestamp_aligned,
         stock_id = stock_id,
         unit_id=unit_id
     ).aggregate(Avg('price'))['price__avg']

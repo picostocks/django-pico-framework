@@ -27,7 +27,7 @@ class StatsMarketPriceSerializer(serializers.ModelSerializer):
         return "{:.5f}".format(obj.price)
 
     def get_added(self, obj):
-        return int(obj.added.strftime('%s'))
+        return obj.timestamp
 
 
 class CurrentMarketPriceSerializer(StatsMarketPriceSerializer):

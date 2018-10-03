@@ -19,14 +19,14 @@ class Migration(migrations.Migration):
                 ('stock_id', models.IntegerField(choices=[(2, 'BTC'), (3, 'ETH'), (4, 'BST')])),
                 ('price', models.DecimalField(decimal_places=18, max_digits=27)),
                 ('granularity', models.IntegerField(choices=[(1, '1h'), (2, '24h'), (3, '7d'), (4, '14d'), (5, 'month'), (6, 'year')])),
-                ('added', models.DateTimeField()),
+                ('timestamp', models.IntegerField()),
             ],
             options={
-                'ordering': ('-added',),
+                'ordering': ('-timestamp',),
             },
         ),
         migrations.AddIndex(
             model_name='statsmarketprice',
-            index=models.Index(fields=['unit_id', 'stock_id', 'granularity'], name='pico_framew_unit_id_fd6fe9_idx'),
+            index=models.Index(fields=['unit_id', 'stock_id', 'granularity', 'timestamp'], name='pico_framew_unit_id_fd6fe9_idx'),
         ),
     ]

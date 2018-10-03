@@ -50,15 +50,15 @@ def _sync_current_price():
 
     aligned_timestamp = utils.align_timestamp(
         granularity=consts.GRANULARITY_MINUTE)
-    aligned_datetime = timezone.datetime.fromtimestamp(aligned_timestamp)
 
     for stock_id, unit_id in settings.get_settings('PAIRS'):
         last_stat = models.StatsMarketPrice.objects.filter(
             stock_id=stock_id,
             unit_id=unit_id,
-            added=aligned_datetime).first()
+            granularity=consts.GRANULARITY_MINUTE,
+            timestamp=aligned_timestamp).first()
 
-        if last_stat:
+        if last_stat is not None:
             continue
 
         price = get_market_price(stock_id, unit_id)
@@ -70,7 +70,7 @@ def _sync_current_price():
             stock_id=stock_id,
             granularity=consts.GRANULARITY_MINUTE,
             price=price,
-            added=aligned_datetime
+            timestamp=aligned_timestamp
         )
 
         new_stats.append(last_stat)
@@ -91,9 +91,7 @@ def _perform_stats_updates(queryset, granularity_kind):
     stat_period = now_seconds - 2 * granularity_time
     stat_period -= stat_period % granularity_time
 
-    stat_queryset = queryset.all().filter(
-        added__gte=timezone.datetime.fromtimestamp(stat_period)
-    )
+    stat_queryset = queryset.all().filter(timestamp__gte=stat_period)
 
     prices = {}
     for item in stat_queryset:
@@ -101,7 +99,7 @@ def _perform_stats_updates(queryset, granularity_kind):
         if idx not in prices:
             prices[idx] = {}
 
-        timestamp_delta = int(item.added.timestamp() - stat_period)
+        timestamp_delta = int(item.timestamp - stat_period)
         bin_id = int(timestamp_delta / granularity_time)
         if bin_id not in prices[idx]:
             prices[idx][bin_id] = {'sum': 0, 'items': 0}
@@ -117,7 +115,7 @@ def _perform_stats_updates(queryset, granularity_kind):
                 stock_id=market[0],
                 unit_id=market[1],
                 granularity=granularity_kind,
-                added=timezone.datetime.fromtimestamp(sync))
+                added=sync)
 
             with transaction.atomic():
                 try:
@@ -130,10 +128,7 @@ def _perform_stats_updates(queryset, granularity_kind):
     # Delete stats which are not used more
     if granularity_kind != consts.GRANULARITY_YEAR:
         span_delta = 60 * consts.GRANULARITY_KINDS[granularity_kind]['span']
-
-        queryset.filter(
-            added__lt=timezone.datetime.fromtimestamp(stat_period-span_delta)
-        ).delete()
+        queryset.filter(added__lt=stat_period-span_delta).delete()
 
 
 def _sync_stats_task():
