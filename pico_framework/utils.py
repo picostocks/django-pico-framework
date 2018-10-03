@@ -1,6 +1,6 @@
 import time
 import datetime
-from django.db.models import Avg
+from django.db.models import Avg, Q
 
 from pico_framework import sers
 from pico_framework import models
@@ -54,15 +54,15 @@ def align_timestamp(timestamp_seconds=None, granularity=consts.GRANULARITY_HOUR)
 
 
 def get_change(stock_id, unit_id):
-    yesterday_timestamp_seconds = time.time() - 24 * 60 * 60
-    yesterday_timestamp_aligned = align_timestamp(
-        timestamp_seconds=yesterday_timestamp_seconds,
-        granularity=consts.GRANULARITY_FORTNIGHTLY
-    )
+    day_seconds = 24 * 60 * 60
+
+    yesterday_timestamp_seconds = int(time.time() - day_seconds)
+    yesterday_timestamp_seconds -= yesterday_timestamp_seconds % day_seconds
 
     return models.StatsMarketPrice.objects.filter(
-        granularity=consts.GRANULARITY_FORTNIGHTLY,
-        timestamp=yesterday_timestamp_aligned,
-        stock_id = stock_id,
-        unit_id=unit_id
+        Q(granularity=consts.GRANULARITY_WEEK_TIME)&
+        Q(stock_id = stock_id)&
+        Q(unit_id=unit_id)&
+        Q(timestamp_gt=yesterday_timestamp_seconds)&
+        Q(timestamp_lte=yesterday_timestamp_seconds+day_seconds)
     ).aggregate(Avg('price'))['price__avg']
