@@ -2,7 +2,7 @@ import time
 import os
 import requests
 import importlib
-from celery import shared_task
+from celery.task import periodic_task
 from datetime import datetime, timedelta
 from django.db import transaction
 
@@ -46,12 +46,12 @@ def notify_new_price(price_stats):
 
 def _sync_current_price():
     new_stats = []
-
     aligned_timestamp = utils.align_timestamp(
         granularity=consts.GRANULARITY_MINUTE)
     aligned_datetime = datetime.fromtimestamp(aligned_timestamp)
 
     for stock_id, unit_id in settings.get_settings('PAIRS'):
+        print('Get new price for {}'.format((stock_id, unit_id)))
         last_stat = models.StatsMarketPrice.objects.filter(
             stock_id=stock_id,
             unit_id=unit_id,
@@ -71,15 +71,15 @@ def _sync_current_price():
             price=price,
             added=aligned_datetime
         )
-
+        print('New price: {}'.format(last_stat))
         new_stats.append(last_stat)
 
     notify_new_price(new_stats)
 
 
-@shared_task
+@periodic_task(run_every=settings.get_settings('SYNC_STATS_EVERY'))
 def sync_current_price_task():
-    _sync_current_price()
+    return _sync_current_price()
 
 
 def _perform_stats_updates(queryset, granularity_kind):
@@ -108,7 +108,6 @@ def _perform_stats_updates(queryset, granularity_kind):
         bin_id = int(timestamp_delta / granularity_time)
         if bin_id not in prices[idx]:
             prices[idx][bin_id] = {'sum': 0, 'items': 0}
-
 
         prices[idx][bin_id]['sum'] += item.price
         prices[idx][bin_id]['items'] += 1
@@ -167,6 +166,6 @@ def _sync_stats_task():
         _perform_stats_updates(queryset, granularity_kind)
 
 
-@shared_task
+@periodic_task(run_every=settings.get_settings('SYNC_STATS_EVERY'))
 def sync_stats_task():
     return _sync_stats_task()
