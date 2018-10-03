@@ -63,6 +63,6 @@ def get_change(stock_id, unit_id):
         Q(granularity=consts.GRANULARITY_WEEK_TIME)&
         Q(stock_id = stock_id)&
         Q(unit_id=unit_id)&
-        Q(timestamp_gt=yesterday_timestamp_seconds)&
-        Q(timestamp_lte=yesterday_timestamp_seconds+day_seconds)
+        Q(timestamp__gt=yesterday_timestamp_seconds)&
+        Q(timestamp__lte=yesterday_timestamp_seconds+day_seconds)
     ).aggregate(Avg('price'))['price__avg']
