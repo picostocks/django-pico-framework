@@ -60,7 +60,7 @@ def get_change(stock_id, unit_id):
     yesterday_timestamp_seconds -= yesterday_timestamp_seconds % day_seconds
 
     return models.StatsMarketPrice.objects.filter(
-        Q(granularity=consts.GRANULARITY_WEEK_TIME)&
+        Q(granularity=consts.GRANULARITY_WEEK)&
         Q(stock_id = stock_id)&
         Q(unit_id=unit_id)&
         Q(timestamp__gt=yesterday_timestamp_seconds)&
