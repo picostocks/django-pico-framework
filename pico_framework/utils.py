@@ -33,20 +33,19 @@ def get_current_price(pairs=None):
 
 
 def get_price_stats(pairs=None, granularity=consts.GRANULARITY_FORTNIGHTLY):
-
     if pairs is None:
         pairs = pico_settings.get_settings('PAIRS')
 
     result = []
     for pair in pairs:
         queryset = models.StatsMarketPrice.objects.filter(granularity=granularity,
-                                                          stock_id = pair[0],
-                                                          unit_id = pair[1])
+                                                          stock_id=pair[0],
+                                                          unit_id=pair[1])
         if queryset:
             result.append({
-                'stock_id':pair[0],
-                'unit_id':pair[1],
-                'values':sers.StatsMarketPriceSerializer(queryset, many=True).data
+                'stock_id': pair[0],
+                'unit_id': pair[1],
+                'values': sers.StatsMarketPriceSerializer(queryset, many=True).data
             })
     return result
 
@@ -66,11 +65,11 @@ def get_change(stock_id, unit_id):
     yesterday_timestamp_seconds -= yesterday_timestamp_seconds % day_seconds
 
     yestarday_price = models.StatsMarketPrice.objects.filter(
-        Q(granularity=consts.GRANULARITY_WEEK)&
-        Q(stock_id = stock_id)&
-        Q(unit_id=unit_id)&
-        Q(timestamp__gt=yesterday_timestamp_seconds)&
-        Q(timestamp__lte=yesterday_timestamp_seconds+day_seconds)
+        Q(granularity=consts.GRANULARITY_WEEK) &
+        Q(stock_id=stock_id) &
+        Q(unit_id=unit_id) &
+        Q(timestamp__gt=yesterday_timestamp_seconds) &
+        Q(timestamp__lte=yesterday_timestamp_seconds + day_seconds)
     ).aggregate(Avg('price'))['price__avg']
 
     if not yestarday_price:
@@ -82,4 +81,4 @@ def get_change(stock_id, unit_id):
 
     last_price = float(last_price.price)
 
-    return (last_price-yestarday_price)/max([last_price, yestarday_price])
+    return (last_price - yestarday_price) / max([last_price, yestarday_price])
