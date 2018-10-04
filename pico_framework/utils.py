@@ -8,6 +8,13 @@ from pico_framework import consts
 from pico_framework import settings as pico_settings
 
 
+def get_last_price(stock_id, unit_id):
+    return models.StatsMarketPrice.objects.filter(
+        unit_id=unit_id,
+        stock_id=stock_id,
+        granularity=consts.GRANULARITY_MINUTE).first()
+
+
 def get_current_price(pairs=None):
     """
     :param pairs: list by tuple
@@ -19,10 +26,9 @@ def get_current_price(pairs=None):
 
     result = []
     for pair in pairs:
-        queryset = models.StatsMarketPrice.objects.filter(
-            unit_id=pair[1], stock_id=pair[0], granularity=consts.GRANULARITY_MINUTE)
-        if queryset:
-            result.append(sers.CurrentMarketPriceSerializer(queryset.last()).data)
+        last_price = get_last_price(stock_id=pair[0], unit_id=pair[1])
+        if last_price:
+            result.append(sers.CurrentMarketPriceSerializer(last_price).data)
     return result
 
 
@@ -59,10 +65,21 @@ def get_change(stock_id, unit_id):
     yesterday_timestamp_seconds = int(time.time() - day_seconds)
     yesterday_timestamp_seconds -= yesterday_timestamp_seconds % day_seconds
 
-    return models.StatsMarketPrice.objects.filter(
+    yestarday_price = models.StatsMarketPrice.objects.filter(
         Q(granularity=consts.GRANULARITY_WEEK)&
         Q(stock_id = stock_id)&
         Q(unit_id=unit_id)&
         Q(timestamp__gt=yesterday_timestamp_seconds)&
         Q(timestamp__lte=yesterday_timestamp_seconds+day_seconds)
     ).aggregate(Avg('price'))['price__avg']
+
+    if not yestarday_price:
+        return None
+
+    last_price = get_last_price(stock_id=stock_id, unit_id=unit_id)
+    if not last_price:
+        return None
+
+    last_price = last_price.value
+
+    return (last_price-yestarday_price)/max([last_price, yestarday_price])
