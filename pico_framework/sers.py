@@ -40,4 +40,7 @@ class CurrentMarketPriceSerializer(StatsMarketPriceSerializer):
 
         # To eliminate "-0.00"
         change = float("{:.2f}".format(change))
+        if not change:
+            return 0
+
         return "{:.2f}".format(change)
