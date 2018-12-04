@@ -81,4 +81,4 @@ def get_change(stock_id, unit_id):
 
     last_price = float(last_price.price)
 
-    return 100*(last_price - yestarday_price) / max([last_price, yestarday_price])
+    return 100*(last_price - yestarday_price) / last_price
