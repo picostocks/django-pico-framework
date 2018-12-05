@@ -1,6 +1,6 @@
-from rest_framework import serializers
 from pico_framework import models
 from pico_framework import utils
+from rest_framework import serializers
 
 
 class StatsMarketPriceSerializer(serializers.ModelSerializer):
