@@ -1,17 +1,13 @@
-import time
-import os
-import requests
 import importlib
-from celery import shared_task
-from datetime import timedelta
-from django.utils import timezone
-from django.db import transaction
+import time
 
+import requests
+from celery import shared_task
+from django.db import transaction
+from pico_framework import consts
 from pico_framework import models
 from pico_framework import settings
-from pico_framework import consts
 from pico_framework import utils
-
 
 ORDERBOOK_URL = 'https://api.picostocks.com/v1/market/orderbook/'
 

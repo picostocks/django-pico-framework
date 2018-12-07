@@ -1,6 +1,6 @@
 from datetime import datetime
-from django.db import models
 
+from django.db import models
 from pico_framework import consts
 
 
