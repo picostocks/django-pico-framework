@@ -1,3 +1,4 @@
+from pico_framework import consts
 from pico_framework import models
 from pico_framework import utils
 from rest_framework import serializers
@@ -24,7 +25,7 @@ class StatsMarketPriceSerializer(serializers.ModelSerializer):
         return obj.get_unit_id_display()
 
     def get_price(self, obj):
-        return "{:.5f}".format(obj.price)
+        return utils.num2str(obj.price, consts.MAX_PRICE_DIGITS)
 
     def get_added(self, obj):
         return obj.timestamp
