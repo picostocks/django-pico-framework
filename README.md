@@ -51,7 +51,7 @@ See detailed [installation instructions](http://www.celeryproject.org/install/).
         'PAIRS': [],
         'SYNC_PRICE_EVERY': 60,
         'SYNC_STATS_EVERY': 60,
-        'CALLBACK_TASKS': [] 
+        'CALLBACK_TASK': [] 
     }
     ```
     
@@ -75,17 +75,17 @@ See detailed [installation instructions](http://www.celeryproject.org/install/).
     
         Number of **seconds** that determines how often stats should be synced.
     
-    - **PICO_FRAMEWORK['CALLBACK_TASKS']**
+    - **PICO_FRAMEWORK['CALLBACK_TASK']**
     
         List of strings. Each string should be absolute path to a callable.
         The callable should accept one parameter,
         which is a list of newly created `pico_framework.models.StatsMarketPrice` instances.
         
-        Each element of `CALLBACK_TASKS` will be called after price syncing task is executed.
+        Each element of `CALLBACK_TASK` will be called after price syncing task is executed.
         
         Example:
         
-        `PICO_FRAMEWORK['CALLBACK_TASKS'] = 'myproject.myapp.callbacks.price_callback'`
+        `PICO_FRAMEWORK['CALLBACK_TASK'] = ['myproject.myapp.callbacks.price_callback']`
 
 5. Configure celery
     ```python

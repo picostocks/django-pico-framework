@@ -1,3 +1,4 @@
+import decimal
 import time
 
 from django.db.models import Avg, Q
@@ -81,3 +82,12 @@ def get_change(stock_id, unit_id):
     last_price = float(last_price.price)
 
     return 100*(last_price - yestarday_price) / yestarday_price
+
+
+def num2str(number, precision):
+    if number is None:
+        number = 0
+    return '{0:.{prec}f}'.format(
+        decimal.Context(prec=100).create_decimal(str(number)),
+        prec=precision,
+    )

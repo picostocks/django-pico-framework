@@ -1,5 +1,7 @@
 import collections
 
+MAX_PRICE_DIGITS = 8
+
 BTC_ID = 2
 ETH_ID = 3
 BST_ID = 4
