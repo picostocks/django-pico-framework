@@ -35,5 +35,5 @@ setup(
     keywords='pico picostocks exchange rest api bitcoin ehtereum btc eth',
     name='djangopicoframework',
     packages=find_packages(),
-    version='0.2',
+    version='0.3',
 )

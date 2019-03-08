@@ -16,13 +16,18 @@ def get_settings(name):
 
 
 def configure_celery(celery_app):
-    celery_app.conf.beat_schedule['pico_fwm_sync_stats'] = {
-        'task': 'pico_framework.tasks.sync_stats_task',
-        'schedule': get_settings('SYNC_STATS_EVERY')
-    }
+    _sync_stats_every = get_settings('SYNC_STATS_EVERY')
 
-    celery_app.conf.beat_schedule['pico_fwm_sync_current_price_task'] = {
-        'task': 'pico_framework.tasks.sync_current_price_task',
-        'schedule': get_settings('SYNC_PRICE_EVERY')
+    if _sync_stats_every is not None:
+        celery_app.conf.beat_schedule['pico_fwm_sync_stats'] = {
+            'task': 'pico_framework.tasks.sync_stats_task',
+            'schedule': _sync_stats_every
+        }
 
-    }
+    _sync_price_every = get_settings('SYNC_PRICE_EVERY')
+    if _sync_price_every is not None:
+        celery_app.conf.beat_schedule['pico_fwm_sync_current_price_task'] = {
+            'task': 'pico_framework.tasks.sync_current_price_task',
+            'schedule': _sync_price_every
+
+        }

@@ -13,9 +13,7 @@ class StatsMarketPrice(models.Model):
 
     class Meta:
         ordering = ('-timestamp', )
-        indexes = [
-            models.Index(fields=['unit_id', 'stock_id', 'granularity', 'timestamp']),
-        ]
+        unique_together = (('unit_id', 'stock_id', 'granularity', 'timestamp'), )
 
     def __str__(self):
         return '{}-{}: {}\{} - {}'.format(self.get_granularity_display(),
