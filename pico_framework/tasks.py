@@ -9,11 +9,21 @@ from pico_framework import models
 from pico_framework import settings
 from pico_framework import utils
 
-ORDERBOOK_URL = 'https://api.picostocks.com/v1/market/orderbook/'
+PICO_ORDERBOOK_URL = 'https://api.picostocks.com/v1/market/orderbook/'
+COINPAPRICA_URL = 'https://api.coinpaprika.com/v1/ticker/'
+
+
+def get_bst_usd_price(ticker_name='bst-blockstamp'):
+    url = COINPAPRICA_URL + ticker_name
+
+    try:
+        return float(requests.get(url).json()['price_usd'])
+    except Exception as e:
+        return None
 
 
 def get_market_price(stock_id, unit_id):
-    response = requests.get(ORDERBOOK_URL,
+    response = requests.get(PICO_ORDERBOOK_URL,
                             {'unit_id': unit_id, 'stock_id': stock_id})
 
     if response.status_code != 200:
@@ -56,7 +66,11 @@ def _sync_current_price():
         if last_stat is not None:
             continue
 
-        price = get_market_price(stock_id, unit_id)
+        if stock_id == consts.BST_ID and unit_id == consts.USD_ID:
+            price = get_bst_usd_price()
+        else:
+            price = get_market_price(stock_id, unit_id)
+
         if price is None:
             return
 
@@ -73,7 +87,7 @@ def _sync_current_price():
     # Remove stats older than 1 hour
     models.StatsMarketPrice.objects.filter(
         granularity=consts.GRANULARITY_MINUTE,
-        timestamp__lt = aligned_timestamp - 3600
+        timestamp__lt=aligned_timestamp - 3600
     ).delete()
 
     notify_new_price(new_stats)
